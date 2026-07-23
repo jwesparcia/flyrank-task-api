@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-
+from app.schema.task_schema import TaskCreate
 router = APIRouter(
     prefix = "/tasks",
     tags = ["Tasks"]
@@ -25,3 +25,19 @@ def get_task_by_id(task_id: int):
         status_code = 404,
         detail = f"Task {task_id} not found."
     )
+@router.post('/', status_code=201)
+def create_task(task: TaskCreate):
+    if not task.title.strip():
+        raise HTTPException(
+            status_code =400,
+            detail="Title cannot be empty or missing"
+        )
+    new_id = max(task["id"] for task in tasks)+1
+    
+    new_task ={
+        "id": new_id,
+        "title": task.title,
+    }
+    
+    tasks.append(new_task)
+    return new_task
