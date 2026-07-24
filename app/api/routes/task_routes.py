@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 from app.schema.task_schema import TaskCreate
+from app.schema.task_schema import TaskUpdate
 router = APIRouter(
     prefix = "/tasks",
     tags = ["Tasks"]
@@ -41,3 +42,43 @@ def create_task(task: TaskCreate):
     
     tasks.append(new_task)
     return new_task
+
+@router.put('/{task_id}')
+def update_task(task_id: int, task_update: TaskUpdate):
+    for task in tasks:
+        if task['id'] == task_id:
+            if task_update.title is None and task_update.done is None:
+                raise HTTPException(
+                    status_code = 400,
+                    detail = "At least one field must be provided."
+                )
+                
+            if task_update.title is not None:
+                if not task_update.title.strip():
+                    raise HTTPException(
+                        status_code = 400,
+                        detail="Ttile cannot be empty."
+                    )
+                task["title"] = task_update.title
+                
+            if task_update.done is not None:
+                task["done"] = task_update.done
+            
+            return task
+    
+    raise HTTPException(
+    status_code =404,
+    detail=f'Task {task_id} not found.'
+    )
+        
+@router.delete('/{task_id}', status_code=204)
+def delete_task(task_id: int):
+    for index, task in enumerate(tasks):
+        if task['id'] == task_id:
+            tasks.pop(index)
+            return
+        
+    raise HTTPException(
+     status_code=404,
+     detail=f'Task {task_id} not found.'
+    )
