@@ -38,6 +38,7 @@ def create_task(task: TaskCreate):
     new_task ={
         "id": new_id,
         "title": task.title,
+        "done": False
     }
     
     tasks.append(new_task)
