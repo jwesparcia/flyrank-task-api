@@ -45,22 +45,25 @@ def get_task_by_id(
    
    return task
 @router.post('/', status_code=201)
-def create_task(task: TaskCreate):
+def create_task(
+    task: TaskCreate,
+    db:Session =Depends(get_db)
+):
     if not task.title.strip():
         raise HTTPException(
             status_code =400,
             detail="Title cannot be empty or missing"
         )
-    new_id = max(task["id"] for task in tasks)+1
     
-    new_task ={
-        "id": new_id,
-        "title": task.title,
-        "done": False
-    }
+    new_task = Task(
+        title=task.title,
+    )
     
-    tasks.append(new_task)
+    db.add(new_task)
+    db.commit()
+    db.refresh(new_task)
     return new_task
+    
 
 @router.put('/{task_id}')
 def update_task(task_id: int, task_update: TaskUpdate):

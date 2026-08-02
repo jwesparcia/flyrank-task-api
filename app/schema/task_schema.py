@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from typing import Optional
 
 class TaskCreate(BaseModel):
-    id: int
     title: str
     
 class TaskUpdate(BaseModel):
