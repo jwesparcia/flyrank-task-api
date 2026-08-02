@@ -44,6 +44,7 @@ def get_task_by_id(
        )
    
    return task
+
 @router.post('/', status_code=201)
 def create_task(
     task: TaskCreate,
@@ -66,41 +67,58 @@ def create_task(
     
 
 @router.put('/{task_id}')
-def update_task(task_id: int, task_update: TaskUpdate):
-    for task in tasks:
-        if task['id'] == task_id:
-            if task_update.title is None and task_update.done is None:
-                raise HTTPException(
-                    status_code = 400,
-                    detail = "At least one field must be provided."
-                )
-                
-            if task_update.title is not None:
-                if not task_update.title.strip():
-                    raise HTTPException(
-                        status_code = 400,
-                        detail="Ttile cannot be empty."
-                    )
-                task["title"] = task_update.title
-                
-            if task_update.done is not None:
-                task["done"] = task_update.done
-            
-            return task
+def update_task(
+            task_id: int,
+            updated_task: TaskUpdate,
+            db:Session = Depends(get_db),
+):
     
-    raise HTTPException(
-    status_code =404,
-    detail=f'Task {task_id} not found.'
-    )
-        
+    statement = select(Task).where(Task.id == task_id)
+    result = db.execute(statement)
+    task = result.scalar_one_or_none()
+    
+    if task is None:
+         raise HTTPException(
+            status_code =404,
+            detail=f'Task {task_id} not found.'
+            )
+    
+    if updated_task.title is None and updated_task.done is None:
+        raise HTTPException(
+            status_code=400,
+            detail='Title or done is required'
+        )
+    
+    if updated_task.title is not None:
+        if not updated_task.title.strip():
+            raise HTTPException(
+                        status_code =400,
+                        detail="Title cannot be empty."
+                    )
+        task.title = updated_task.title
+    
+    if updated_task.done is not None:
+        task.done = updated_task.done
+  
+    db.commit()
+    return task
+    
+    
 @router.delete('/{task_id}', status_code=204)
-def delete_task(task_id: int):
-    for index, task in enumerate(tasks):
-        if task['id'] == task_id:
-            tasks.pop(index)
-            return
-        
-    raise HTTPException(
-     status_code=404,
-     detail=f'Task {task_id} not found.'
-    )
+def delete_task(
+    task_id: int,
+    db:Session=Depends(get_db)
+):
+    statement = select(Task).where(Task.id==task_id)
+    result = db.execute(statement)
+    task = result.scalar_one_or_none()
+    
+    if task is None:
+        raise HTTPException(
+            status_code=404,
+            detail='Task is not found.'
+        )
+    
+    db.delete(task)
+    db.commit()
+    
