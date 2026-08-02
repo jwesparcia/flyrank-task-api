@@ -1,6 +1,11 @@
 from fastapi import APIRouter, HTTPException, Response
 from app.schema.task_schema import TaskCreate
 from app.schema.task_schema import TaskUpdate
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+from fastapi import Depends
+from app.models.task import Task
+from dependencies.database import get_db
 router = APIRouter(
     prefix = "/tasks",
     tags = ["Tasks"]
@@ -13,8 +18,15 @@ tasks = [
     ]
 
 @router.get("/")
-def get_tasks():
+def get_tasks(
+    db: Session = Depends(get_db)
+):
+    statement = select(Task)
+    result = db.execute(statement)
+    tasks= result.scalars().all()
+    
     return tasks
+    
 
 @router.get("/{task_id}")
 def get_task_by_id(task_id: int):
