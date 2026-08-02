@@ -29,15 +29,21 @@ def get_tasks(
     
 
 @router.get("/{task_id}")
-def get_task_by_id(task_id: int):
-    for task in tasks:
-        if task["id"] == task_id:
-            return task
-    
-    raise HTTPException(
-        status_code = 404,
-        detail = f"Task {task_id} not found."
-    )
+def get_task_by_id(
+    task_id: int,
+    db:Session = Depends(get_db)
+):
+   statement = select(Task).where(Task.id==task_id)
+   result = db.execute(statement)
+   task = result.scalar_one_or_none()
+   
+   if task is None:
+       raise HTTPException(
+           status_code=404,
+           detail='Task not found.'
+       )
+   
+   return task
 @router.post('/', status_code=201)
 def create_task(task: TaskCreate):
     if not task.title.strip():
